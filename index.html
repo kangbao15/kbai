@@ -178,6 +178,42 @@
       header { padding: 13px; }
       .composer { padding: 10px; }
     }
+    .guide {
+  margin: 10px 15px 0;
+  padding: 10px 13px;
+  border: 1px solid #ffffff25;
+  border-radius: 12px;
+  background: #281638aa;
+  color: #eee4ff;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-y: auto;
+  max-height: 180px;
+}
+
+.guide summary {
+  cursor: pointer;
+  color: #d8b4fe;
+  font-weight: 600;
+}
+
+.guide h3 {
+  margin: 12px 0 5px;
+  font-size: 14px;
+}
+
+.guide ul {
+  margin: 5px 0;
+  padding-left: 20px;
+}
+
+.guide p {
+  margin: 5px 0;
+}
+
+.guide[open] {
+  flex-shrink: 0;
+}
   </style>
 </head>
 
@@ -198,6 +234,38 @@
       </select>
       <button id="clear" type="button">🗑 Xóa lịch sử</button>
     </div>
+    <details class="guide">
+  <summary>📜 Hướng dẫn sử dụng & Nội quy</summary>
+
+  <h3>📖 Hướng dẫn sử dụng</h3>
+  <ul>
+    <li>Nhập câu hỏi vào khung chat và nhấn Gửi.</li>
+    <li>Đặt câu hỏi rõ ràng để nhận câu trả lời tốt hơn.</li>
+    <li>Kiểm tra lại thông tin quan trọng vì AI có thể mắc lỗi.</li>
+    <li>Không chia sẻ mật khẩu hoặc thông tin cá nhân nhạy cảm.</li>
+  </ul>
+
+  <h3>🚫 Hành vi bị nghiêm cấm</h3>
+  <ul>
+    <li>Spam câu hỏi, tin nhắn hoặc ký tự liên tục.</li>
+    <li>Sử dụng bot hoặc script để gửi yêu cầu hàng loạt.</li>
+    <li>Cố tình gây quá tải hoặc phá hoại hệ thống.</li>
+    <li>Lạm dụng AI để lừa đảo, quấy rối hoặc gây hại.</li>
+    <li>Tìm cách khai thác lỗi hoặc vượt qua biện pháp bảo vệ.</li>
+  </ul>
+
+  <h3>⚖️ Xử lý vi phạm</h3>
+  <p>
+    Tùy mức độ, hệ thống có thể cảnh báo, giới hạn tốc độ gửi
+    yêu cầu hoặc tạm ngừng quyền sử dụng khi cần thiết.
+  </p>
+
+  <h3>🛡️ Lưu ý</h3>
+  <p>
+    KangBao AI có thể trả lời sai. Hãy kiểm tra thông tin quan trọng
+    và sử dụng dịch vụ một cách văn minh, có trách nhiệm.
+  </p>
+</details>
 
     <section class="chat" id="chat" aria-live="polite"></section>
 
