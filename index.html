@@ -120,6 +120,10 @@
 
     .actions { margin-top: 9px; }
     .copy { padding: 5px 9px; font-size: 12px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .retry { background: linear-gradient(135deg, #a855f7, #6d28d9); border: 0; }
+    .retry:disabled { cursor: not-allowed; }
+    .message.error { border-color: #f8717166; background: #f871711a; }
 
     .composer {
       display: flex;
@@ -314,6 +318,10 @@
       "6LeH2PQtAAAAABW_JhKLSGiECmgRS4-p83rkqCgp";
 
     const HISTORY_KEY = "kangbao-ai-chat-v2";
+    const MODEL_HISTORY_LIMIT = 20;      // chỉ gửi 20 tin gần nhất lên model
+    const REQUEST_TIMEOUT_MS = 30000;    // quá 30s không có phản hồi thì báo lỗi
+    const RETRY_COOLDOWN_429 = 10;       // giây chờ trước khi cho thử lại (quá tải/hết lượt)
+    const RETRY_COOLDOWN_5XX = 5;
 
     const SYSTEM_PROMPT = `
 Bạn là KangBao AI, trợ lý AI của KangBao.
@@ -446,7 +454,7 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
     function makeModelHistory() {
       const result = [];
 
-      for (const item of history) {
+      for (const item of history.slice(-MODEL_HISTORY_LIMIT)) {
         const role = item.role === "user" ? "user" : "model";
         const previous = result[result.length - 1];
 
@@ -477,40 +485,62 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
           temperature: 0.7,
           maxOutputTokens: 1024
         }
-      });
+      }, { timeout: REQUEST_TIMEOUT_MS });
 
       chatSession = model.startChat({
         history: makeModelHistory()
       });
     }
 
-    function friendlyError(error) {
+    function getStatus(error) {
+      const direct =
+        error?.customErrorData?.status ?? error?.status ?? error?.httpStatus;
+
+      if (Number.isInteger(direct)) return direct;
+
+      const match = String(error?.message || error || "")
+        .match(/\b(401|403|404|429|500|502|503|504)\b/);
+
+      return match ? Number(match[1]) : 0;
+    }
+
+    // Trả về { text, retryable, cooldown } để hiện thông báo + nút Thử lại.
+    function classifyError(error) {
       const message = String(error?.message || error || "");
       const lower = message.toLowerCase();
+      const status = getStatus(error);
+
+      if (error?.isTimeout || lower.includes("timeout") || lower.includes("timed out")) {
+        return {
+          text: "⏱️ Gemini phản hồi quá lâu. Bấm Thử lại nhé.",
+          retryable: true,
+          cooldown: 0
+        };
+      }
 
       if (
+        status === 429 ||
         lower.includes("quota") ||
         lower.includes("resource_exhausted") ||
-        lower.includes("429")
+        lower.includes("too many requests")
       ) {
-        return "⏳ Gemini đang bị giới hạn lượt dùng hoặc hết quota. Chờ một lúc rồi thử lại nhé.";
+        return {
+          text: "⏳ Gemini đang bị giới hạn lượt dùng (429). Chờ một chút rồi bấm Thử lại nhé.",
+          retryable: true,
+          cooldown: RETRY_COOLDOWN_429
+        };
       }
 
       if (
-        lower.includes("app check") ||
-        lower.includes("appcheck") ||
-        lower.includes("403") ||
-        lower.includes("401")
+        [500, 502, 503, 504].includes(status) ||
+        lower.includes("overloaded") ||
+        lower.includes("unavailable")
       ) {
-        return "🔐 Yêu cầu bị từ chối. Hãy kiểm tra cấu hình App Check và Firebase.";
-      }
-
-      if (
-        lower.includes("not found") ||
-        lower.includes("not supported") ||
-        lower.includes("model")
-      ) {
-        return "⚙️ Model không khả dụng cho yêu cầu này. Hãy thử chọn model còn lại.";
+        return {
+          text: "🔥 Gemini đang quá tải (503). Chờ một chút rồi bấm Thử lại nhé.",
+          retryable: true,
+          cooldown: RETRY_COOLDOWN_5XX
+        };
       }
 
       if (
@@ -518,11 +548,117 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
         lower.includes("network") ||
         lower.includes("offline")
       ) {
-        return "🌐 Không kết nối được dịch vụ AI. Kiểm tra mạng rồi thử lại.";
+        return {
+          text: "🌐 Không kết nối được dịch vụ AI. Kiểm tra mạng rồi bấm Thử lại.",
+          retryable: true,
+          cooldown: 0
+        };
+      }
+
+      if (
+        lower.includes("app check") ||
+        lower.includes("appcheck") ||
+        status === 401 ||
+        status === 403
+      ) {
+        return {
+          text: "🔐 Yêu cầu bị từ chối. Hãy kiểm tra cấu hình App Check và Firebase.",
+          retryable: false,
+          cooldown: 0
+        };
+      }
+
+      if (
+        status === 404 ||
+        lower.includes("not found") ||
+        lower.includes("not supported")
+      ) {
+        return {
+          text: "⚙️ Model không khả dụng cho yêu cầu này. Hãy thử chọn model còn lại.",
+          retryable: false,
+          cooldown: 0
+        };
+      }
+
+      if (lower.includes("blocked") || lower.includes("safety")) {
+        return {
+          text: "🙈 Gemini từ chối trả lời câu này. Thử hỏi theo cách khác nhé.",
+          retryable: false,
+          cooldown: 0
+        };
       }
 
       console.error("Firebase AI error:", error);
-      return "❌ Gemini gặp lỗi khi trả lời. Hãy thử lại sau nhé.";
+      return {
+        text: "❌ Gemini gặp lỗi khi trả lời. Bấm Thử lại hoặc hỏi lại sau nhé.",
+        retryable: true,
+        cooldown: 0
+      };
+    }
+
+    function friendlyError(error) {
+      return classifyError(error).text;
+    }
+
+    function withTimeout(promise, ms) {
+      let timer;
+
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          const error = new Error("Request timeout");
+          error.isTimeout = true;
+          reject(error);
+        }, ms);
+      });
+
+      return Promise.race([promise, timeout]).finally(() =>
+        clearTimeout(timer)
+      );
+    }
+
+    // Bong bóng lỗi, kèm nút "Thử lại" gửi lại đúng câu vừa hỏi.
+    function addErrorMessage(info, prompt) {
+      const { bubble } = addMessage(info.text, "bot", { save: false });
+      bubble.classList.add("error");
+
+      if (!info.retryable) return;
+
+      const actions = bubble.querySelector(".actions");
+      const retry = document.createElement("button");
+      retry.className = "copy retry";
+      retry.type = "button";
+
+      let remaining = info.cooldown || 0;
+
+      const renderLabel = () => {
+        retry.textContent =
+          remaining > 0 ? "🔄 Thử lại (" + remaining + "s)" : "🔄 Thử lại";
+        retry.disabled = remaining > 0;
+      };
+
+      renderLabel();
+
+      if (remaining > 0) {
+        const timer = setInterval(() => {
+          if (!retry.isConnected) {
+            clearInterval(timer);
+            return;
+          }
+
+          remaining -= 1;
+          renderLabel();
+
+          if (remaining <= 0) clearInterval(timer);
+        }, 1000);
+      }
+
+      retry.addEventListener("click", () => {
+        if (busy || retry.disabled) return;
+        bubble.remove();
+        sendPrompt(prompt, { showUser: false });
+      });
+
+      actions.prepend(retry);
     }
 
     function initializeAI() {
@@ -599,26 +735,25 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
       }
     });
 
-    form.addEventListener("submit", async event => {
-      event.preventDefault();
-
-      const prompt = promptInput.value.trim();
-
+    async function sendPrompt(prompt, { showUser = true } = {}) {
       if (!prompt || busy) return;
 
       if (!chatSession) {
         addMessage(
           "AI chưa sẵn sàng. Kiểm tra cấu hình Firebase nhé.",
-          "bot"
+          "bot",
+          { save: false }
         );
         return;
       }
 
+      // Gỡ nút Thử lại của các lỗi cũ để khỏi gửi nhầm câu cũ.
+      chatElement.querySelectorAll(".retry").forEach(button => button.remove());
+
       setBusy(true);
       statusElement.textContent = "● Đang kết nối Gemini...";
 
-      addMessage(prompt, "user", { save: false });
-      promptInput.value = "";
+      if (showUser) addMessage(prompt, "user", { save: false });
 
       const responseMessage = addMessage(
         "Đang kết nối...",
@@ -627,12 +762,25 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
       );
 
       let answer = "";
+      let iterator = null;
 
       try {
         // Hiển thị nội dung ngay khi từng phần được Gemini gửi về.
-        const result = await chatSession.sendMessageStream(prompt);
+        const result = await withTimeout(
+          chatSession.sendMessageStream(prompt),
+          REQUEST_TIMEOUT_MS
+        );
 
-        for await (const chunk of result.stream) {
+        iterator = result.stream[Symbol.asyncIterator]();
+
+        while (true) {
+          const { value: chunk, done } = await withTimeout(
+            iterator.next(),
+            REQUEST_TIMEOUT_MS
+          );
+
+          if (done) break;
+
           const piece = chunk.text();
 
           if (piece) {
@@ -648,10 +796,13 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
         if (!answer.trim()) {
           responseMessage.bubble.remove();
 
-          addMessage(
-            "Gemini trả về nội dung trống. Thử hỏi lại nhé.",
-            "bot",
-            { save: false }
+          addErrorMessage(
+            {
+              text: "Gemini trả về nội dung trống. Bấm Thử lại nhé.",
+              retryable: true,
+              cooldown: 0
+            },
+            prompt
           );
 
           statusElement.textContent = "● Không có nội dung";
@@ -672,8 +823,10 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
       } catch (error) {
         console.error("KBAI request failed:", error);
 
+        try { iterator?.return?.(); } catch {}
+
         responseMessage.bubble.remove();
-        addMessage(friendlyError(error), "bot", { save: false });
+        addErrorMessage(classifyError(error), prompt);
 
         statusElement.textContent = "● Gemini gặp lỗi";
 
@@ -689,6 +842,26 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
         promptInput.focus();
         scrollToBottom();
       }
+    }
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const prompt = promptInput.value.trim();
+
+      if (!prompt || busy) return;
+
+      if (!chatSession) {
+        addMessage(
+          "AI chưa sẵn sàng. Kiểm tra cấu hình Firebase nhé.",
+          "bot",
+          { save: false }
+        );
+        return;
+      }
+
+      promptInput.value = "";
+      sendPrompt(prompt);
     });
   </script>
 </body>
