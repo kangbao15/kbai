@@ -26,8 +26,8 @@
     }
 
     .app {
-      width: min(900px, 100%);
-      height: min(850px, 95vh);
+      width: min(1100px, 100%);
+      height: min(960px, 94vh);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -75,7 +75,7 @@
       border-bottom: 1px solid #ffffff12;
     }
 
-    button, select, input { font: inherit; }
+    button, select, input, textarea { font: inherit; }
 
     button, select {
       color: white;
@@ -89,6 +89,11 @@
     button:hover { filter: brightness(1.2); }
     button:disabled { opacity: .55; cursor: wait; }
     select { min-width: 0; max-width: 100%; }
+
+    #webSearch.active {
+      background: linear-gradient(135deg, #a855f7, #6d28d9);
+      border-color: transparent;
+    }
 
     .chat {
       flex: 1;
@@ -118,35 +123,108 @@
       overflow-wrap: anywhere;
     }
 
-    .actions { margin-top: 9px; }
+    .actions { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px; }
     .copy { padding: 5px 9px; font-size: 12px; }
-    .actions { display: flex; flex-wrap: wrap; gap: 6px; }
     .retry { background: linear-gradient(135deg, #a855f7, #6d28d9); border: 0; }
     .retry:disabled { cursor: not-allowed; }
     .message.error { border-color: #f8717166; background: #f871711a; }
 
+    .sources-panel {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border: 1px solid #ffffff18;
+      border-radius: 10px;
+      background: #0b0612aa;
+      font-size: 12px;
+    }
+
+    .sources-note { color: #9b8ab3; margin-bottom: 6px; }
+    .sources-panel ul { margin: 0; padding-left: 18px; }
+    .sources-panel li { margin: 3px 0; }
+    .sources-panel a { color: #c084fc; overflow-wrap: anywhere; }
+
+    .attachments {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 0 15px;
+    }
+
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      border: 1px solid #ffffff25;
+      border-radius: 10px;
+      background: #281638;
+      font-size: 12px;
+      max-width: 220px;
+    }
+
+    .chip-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 110px;
+    }
+
+    .chip-size { color: #b7a9c8; flex-shrink: 0; }
+
+    .chip-remove {
+      border: 0;
+      background: transparent;
+      color: #f87171;
+      padding: 0 2px;
+      font-size: 13px;
+      border-radius: 6px;
+    }
+
+    .attach-error {
+      padding: 0 16px;
+      color: #fca5a5;
+      font-size: 12px;
+    }
+
     .composer {
       display: flex;
+      align-items: flex-end;
       gap: 10px;
       padding: 15px;
       border-top: 1px solid #ffffff18;
     }
 
+    .icon-btn {
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      border-radius: 14px;
+    }
+
     #prompt {
       min-width: 0;
       flex: 1;
+      max-height: 160px;
       padding: 14px 16px;
       border-radius: 14px;
       border: 1px solid #ffffff25;
       background: #08040dcc;
       color: white;
       outline: none;
+      resize: none;
+      overflow-y: auto;
+      line-height: 1.5;
     }
 
     #prompt:focus { border-color: #c084fc; }
 
     #send {
       min-width: 55px;
+      height: 48px;
+      flex-shrink: 0;
       border: 0;
       font-size: 20px;
       background: linear-gradient(135deg, #a855f7, #6d28d9);
@@ -182,42 +260,40 @@
       header { padding: 13px; }
       .composer { padding: 10px; }
     }
+
     .guide {
-  margin: 10px 15px 0;
-  padding: 10px 13px;
-  border: 1px solid #ffffff25;
-  border-radius: 12px;
-  background: #281638aa;
-  color: #eee4ff;
-  font-size: 13px;
-  line-height: 1.6;
-  overflow-y: auto;
-  max-height: 180px;
-}
+      margin: 10px 15px 0;
+      padding: 10px 13px;
+      border: 1px solid #ffffff25;
+      border-radius: 12px;
+      background: #281638aa;
+      color: #eee4ff;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-y: auto;
+      max-height: 180px;
+      flex-shrink: 0;
+    }
 
-.guide summary {
-  cursor: pointer;
-  color: #d8b4fe;
-  font-weight: 600;
-}
+    .guide summary {
+      cursor: pointer;
+      color: #d8b4fe;
+      font-weight: 600;
+    }
 
-.guide h3 {
-  margin: 12px 0 5px;
-  font-size: 14px;
-}
+    .guide h3 {
+      margin: 12px 0 5px;
+      font-size: 14px;
+    }
 
-.guide ul {
-  margin: 5px 0;
-  padding-left: 20px;
-}
+    .guide ul {
+      margin: 5px 0;
+      padding-left: 20px;
+    }
 
-.guide p {
-  margin: 5px 0;
-}
-
-.guide[open] {
-  flex-shrink: 0;
-}
+    .guide p {
+      margin: 5px 0;
+    }
   </style>
 </head>
 
@@ -236,51 +312,67 @@
         <option value="gemini-3.5-flash-lite">⚡ Gemini Flash-Lite · Nhanh</option>
         <option value="gemini-3.8-flash">🧠 Gemini Flash · Mạnh hơn</option>
       </select>
+      <button id="webSearch" type="button" aria-pressed="false">🌐 Tìm trên mạng</button>
       <button id="clear" type="button">🗑 Xóa lịch sử</button>
     </div>
+
     <details class="guide">
-  <summary>📜 Hướng dẫn sử dụng & Nội quy</summary>
+      <summary>📜 Hướng dẫn sử dụng & Nội quy</summary>
 
-  <h3>📖 Hướng dẫn sử dụng</h3>
-  <ul>
-    <li>Nhập câu hỏi vào khung chat và nhấn Gửi.</li>
-    <li>Đặt câu hỏi rõ ràng để nhận câu trả lời tốt hơn.</li>
-    <li>Kiểm tra lại thông tin quan trọng vì AI có thể mắc lỗi.</li>
-    <li>Không chia sẻ mật khẩu hoặc thông tin cá nhân nhạy cảm.</li>
-  </ul>
+      <h3>📖 Hướng dẫn sử dụng</h3>
+      <ul>
+        <li>Nhập câu hỏi vào khung chat và nhấn Gửi (Enter). Shift+Enter để xuống dòng.</li>
+        <li>Bấm nút ＋ để đính kèm ảnh, video, PDF hoặc tệp văn bản/code.</li>
+        <li>Bấm 🌐 để bật tìm trên mạng cho tin nhắn kế tiếp (1 lượt mỗi ngày).</li>
+        <li>Đặt câu hỏi rõ ràng để nhận câu trả lời tốt hơn.</li>
+        <li>Kiểm tra lại thông tin quan trọng vì AI có thể mắc lỗi.</li>
+        <li>Không chia sẻ mật khẩu hoặc thông tin cá nhân nhạy cảm.</li>
+      </ul>
 
-  <h3>🚫 Hành vi bị nghiêm cấm</h3>
-  <ul>
-    <li>Spam câu hỏi, tin nhắn hoặc ký tự liên tục.</li>
-    <li>Sử dụng bot hoặc script để gửi yêu cầu hàng loạt.</li>
-    <li>Cố tình gây quá tải hoặc phá hoại hệ thống.</li>
-    <li>Lạm dụng AI để lừa đảo, quấy rối hoặc gây hại.</li>
-    <li>Tìm cách khai thác lỗi hoặc vượt qua biện pháp bảo vệ.</li>
-  </ul>
+      <h3>🚫 Hành vi bị nghiêm cấm</h3>
+      <ul>
+        <li>Spam câu hỏi, tin nhắn hoặc ký tự liên tục.</li>
+        <li>Sử dụng bot hoặc script để gửi yêu cầu hàng loạt.</li>
+        <li>Cố tình gây quá tải hoặc phá hoại hệ thống.</li>
+        <li>Lạm dụng AI để lừa đảo, quấy rối hoặc gây hại.</li>
+        <li>Tìm cách khai thác lỗi hoặc vượt qua biện pháp bảo vệ.</li>
+      </ul>
 
-  <h3>⚖️ Xử lý vi phạm</h3>
-  <p>
-    Tùy mức độ, hệ thống có thể cảnh báo, giới hạn tốc độ gửi
-    yêu cầu hoặc tạm ngừng quyền sử dụng khi cần thiết.
-  </p>
+      <h3>⚖️ Xử lý vi phạm</h3>
+      <p>
+        Tùy mức độ, hệ thống có thể cảnh báo, giới hạn tốc độ gửi
+        yêu cầu hoặc tạm ngừng quyền sử dụng khi cần thiết.
+      </p>
 
-  <h3>🛡️ Lưu ý</h3>
-  <p>
-    KangBao AI có thể trả lời sai. Hãy kiểm tra thông tin quan trọng
-    và sử dụng dịch vụ một cách văn minh, có trách nhiệm.
-  </p>
-</details>
+      <h3>🛡️ Lưu ý</h3>
+      <p>
+        KangBao AI có thể trả lời sai. Hãy kiểm tra thông tin quan trọng
+        và sử dụng dịch vụ một cách văn minh, có trách nhiệm. Tệp đính kèm
+        không được lưu lại, chỉ tồn tại trong phiên chat hiện tại.
+      </p>
+    </details>
 
     <section class="chat" id="chat" aria-live="polite"></section>
 
+    <div class="attach-error" id="attachError" hidden></div>
+    <div class="attachments" id="attachments" hidden></div>
+
     <form class="composer" id="form">
       <input
-        id="prompt"
-        maxlength="4000"
-        placeholder="Hỏi gì đi bro... 🐺"
-        autocomplete="off"
-        required
+        type="file"
+        id="fileInput"
+        multiple
+        hidden
+        accept="image/*,video/*,application/pdf,.txt,.md,.log,.csv,.tsv,.srt,.json,.xml,.yaml,.yml,.ini,.env,.toml,.html,.htm,.css,.js,.mjs,.cjs,.ts,.jsx,.tsx,.py,.java,.c,.h,.cpp,.hpp,.cs,.php,.sql,.sh,.bash,.rb,.go,.rs,.kt,.swift,.lua,.vue,.dart,.r,.pl,.ps1,.bat,.gradle"
       >
+      <button id="attachBtn" class="icon-btn" type="button" aria-label="Đính kèm tệp">＋</button>
+      <textarea
+        id="prompt"
+        rows="1"
+        maxlength="4000"
+        placeholder="Hỏi gì đi bro... 🐺 (Shift+Enter để xuống dòng)"
+        required
+      ></textarea>
       <button id="send" type="submit" aria-label="Gửi tin nhắn">➤</button>
     </form>
 
@@ -318,10 +410,30 @@
       "6LeH2PQtAAAAABW_JhKLSGiECmgRS4-p83rkqCgp";
 
     const HISTORY_KEY = "kangbao-ai-chat-v2";
+    const WEBSEARCH_KEY = "kangbao-ai-websearch-v1";
     const MODEL_HISTORY_LIMIT = 20;      // chỉ gửi 20 tin gần nhất lên model
     const REQUEST_TIMEOUT_MS = 30000;    // quá 30s không có phản hồi thì báo lỗi
     const RETRY_COOLDOWN_429 = 10;       // giây chờ trước khi cho thử lại (quá tải/hết lượt)
     const RETRY_COOLDOWN_5XX = 5;
+    const MAX_HISTORY_CHARS = 4_000_000; // ngưỡng chủ động dọn lịch sử (~4MB)
+
+    // Giới hạn đính kèm tệp. Tệp KHÔNG được lưu lại, chỉ nằm trong bộ nhớ phiên.
+    const ATTACH_LIMITS = {
+      image: 15 * 1024 * 1024,
+      pdf: 15 * 1024 * 1024,
+      text: 15 * 1024 * 1024,
+      video: 5 * 1024 * 1024
+    };
+    const MAX_TOTAL_ATTACH_BYTES = 15 * 1024 * 1024;
+
+    const TEXT_EXTENSIONS = new Set([
+      "txt", "md", "log", "csv", "tsv", "srt",
+      "json", "xml", "yaml", "yml", "ini", "env", "toml",
+      "html", "htm", "css", "js", "mjs", "cjs", "ts", "jsx", "tsx",
+      "py", "java", "c", "h", "cpp", "hpp", "cs", "php", "sql",
+      "sh", "bash", "rb", "go", "rs", "kt", "swift", "lua", "vue",
+      "dart", "r", "pl", "ps1", "bat", "gradle"
+    ]);
 
     const SYSTEM_PROMPT = `
 Bạn là KangBao AI, trợ lý AI của KangBao.
@@ -342,12 +454,20 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
     const modelSelect = $("model");
     const statusElement = $("status");
     const form = $("form");
+    const fileInput = $("fileInput");
+    const attachBtn = $("attachBtn");
+    const attachmentsBox = $("attachments");
+    const attachErrorBox = $("attachError");
+    const webSearchBtn = $("webSearch");
 
     let ai = null;
     let model = null;
     let chatSession = null;
     let busy = false;
     let history = [];
+    let attachments = [];       // tệp đang chờ gửi (chỉ trong bộ nhớ, không lưu)
+    let webSearchArmed = false; // đã bấm nút tìm trên mạng, áp dụng cho tin kế tiếp
+    let attachErrorTimer = null;
 
     try {
       const saved = JSON.parse(
@@ -367,14 +487,47 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
       history = [];
     }
 
+    // --- Lịch sử & bộ nhớ trình duyệt -----------------------------------
+
+    function trimHistoryToFit() {
+      let trimmed = false;
+
+      while (history.length > 2 && JSON.stringify(history).length > MAX_HISTORY_CHARS) {
+        history.splice(0, 2); // bỏ cặp tin nhắn cũ nhất ở đầu chat
+        trimmed = true;
+      }
+
+      return trimmed;
+    }
+
     function saveHistory() {
-      try {
-        localStorage.setItem(
-          HISTORY_KEY,
-          JSON.stringify(history.slice(-100))
-        );
-      } catch (error) {
-        console.warn("Không lưu được lịch sử:", error);
+      let trimmed = trimHistoryToFit();
+
+      for (let attempt = 0; attempt < 50; attempt++) {
+        try {
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+
+          if (trimmed) {
+            renderHistory();
+
+            // Đặt sau hàng đợi tác vụ hiện tại để không bị các dòng trạng
+            // thái khác (vd. "Gemini đã trả lời") ghi đè ngay sau đây.
+            setTimeout(() => {
+              statusElement.textContent =
+                "● Đã xóa bớt tin nhắn cũ để giải phóng bộ nhớ trình duyệt";
+            }, 0);
+          }
+
+          return;
+        } catch (error) {
+          if (history.length <= 2) {
+            console.warn("Không lưu được lịch sử:", error);
+            return;
+          }
+
+          history.splice(0, 2);
+          trimmed = true;
+        }
       }
     }
 
@@ -491,6 +644,301 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
         history: makeModelHistory()
       });
     }
+
+    // --- Đính kèm tệp (chỉ trong bộ nhớ phiên, không lưu) ----------------
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + " B";
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+      return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    }
+
+    function classifyFile(file) {
+      const ext = (file.name.split(".").pop() || "").toLowerCase();
+
+      if (file.type.startsWith("image/")) return "image";
+      if (file.type.startsWith("video/")) return "video";
+      if (file.type === "application/pdf" || ext === "pdf") return "pdf";
+
+      if (
+        TEXT_EXTENSIONS.has(ext) ||
+        file.type.startsWith("text/") ||
+        file.type === "application/json"
+      ) {
+        return "text";
+      }
+
+      return null;
+    }
+
+    function guessMime(kind) {
+      if (kind === "pdf") return "application/pdf";
+      if (kind === "image") return "image/png";
+      if (kind === "video") return "video/mp4";
+      return "text/plain";
+    }
+
+    function iconFor(kind) {
+      if (kind === "image") return "🖼️";
+      if (kind === "video") return "🎬";
+      if (kind === "pdf") return "📄";
+      return "📝";
+    }
+
+    function showAttachError(message) {
+      attachErrorBox.textContent = message;
+      attachErrorBox.hidden = false;
+
+      clearTimeout(attachErrorTimer);
+      attachErrorTimer = setTimeout(() => {
+        attachErrorBox.hidden = true;
+      }, 4500);
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          const result = String(reader.result || "");
+          resolve(result.split(",")[1] || "");
+        };
+
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function enforceAttachmentBudget() {
+      let total = attachments.reduce((sum, a) => sum + a.size, 0);
+      const dropped = [];
+
+      while (total > MAX_TOTAL_ATTACH_BYTES && attachments.length > 1) {
+        const removed = attachments.shift();
+        dropped.push(removed.name);
+        total -= removed.size;
+      }
+
+      if (dropped.length) {
+        showAttachError(
+          "Đã bỏ \"" + dropped.join(", ") + "\" để đủ chỗ (tối đa " +
+          formatSize(MAX_TOTAL_ATTACH_BYTES) + ")."
+        );
+      }
+    }
+
+    function renderAttachments() {
+      attachmentsBox.replaceChildren();
+      attachmentsBox.hidden = attachments.length === 0;
+
+      for (const item of attachments) {
+        const chip = document.createElement("div");
+        chip.className = "chip";
+
+        const icon = document.createElement("span");
+        icon.textContent = iconFor(item.kind);
+
+        const name = document.createElement("span");
+        name.className = "chip-name";
+        name.textContent = item.name;
+        name.title = item.name;
+
+        const size = document.createElement("span");
+        size.className = "chip-size";
+        size.textContent = formatSize(item.size);
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "chip-remove";
+        removeButton.textContent = "✕";
+        removeButton.setAttribute("aria-label", "Bỏ tệp " + item.name);
+
+        removeButton.addEventListener("click", () => {
+          attachments = attachments.filter(a => a.id !== item.id);
+          renderAttachments();
+        });
+
+        chip.append(icon, name, size, removeButton);
+        attachmentsBox.appendChild(chip);
+      }
+    }
+
+    async function handleFiles(fileList) {
+      for (const file of Array.from(fileList)) {
+        const kind = classifyFile(file);
+
+        if (!kind) {
+          showAttachError("\"" + file.name + "\": định dạng không hỗ trợ.");
+          continue;
+        }
+
+        const limit = ATTACH_LIMITS[kind];
+
+        if (file.size > limit) {
+          showAttachError(
+            "\"" + file.name + "\" vượt quá " + formatSize(limit) + "."
+          );
+          continue;
+        }
+
+        try {
+          const entry = {
+            id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+            name: file.name,
+            size: file.size,
+            kind,
+            mimeType: file.type || guessMime(kind)
+          };
+
+          if (kind === "text") {
+            entry.text = await file.text();
+          } else {
+            entry.base64 = await fileToBase64(file);
+          }
+
+          attachments.push(entry);
+          enforceAttachmentBudget();
+          renderAttachments();
+        } catch (error) {
+          console.error("Không đọc được tệp:", error);
+          showAttachError("Không đọc được \"" + file.name + "\".");
+        }
+      }
+    }
+
+    function buildMessageParts(promptText, atts) {
+      if (!atts.length) return promptText;
+
+      let textBody = promptText;
+
+      for (const a of atts) {
+        if (a.kind === "text") {
+          textBody += "\n\n--- Tệp đính kèm: " + a.name + " ---\n" + a.text;
+        }
+      }
+
+      const parts = [{ text: textBody }];
+
+      for (const a of atts) {
+        if (a.kind === "image" || a.kind === "video" || a.kind === "pdf") {
+          parts.push({
+            inlineData: {
+              mimeType: a.mimeType || guessMime(a.kind),
+              data: a.base64
+            }
+          });
+        }
+      }
+
+      return parts;
+    }
+
+    attachBtn.addEventListener("click", () => {
+      if (busy) return;
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", async () => {
+      await handleFiles(fileInput.files);
+      fileInput.value = ""; // cho phép chọn lại cùng tệp sau này
+    });
+
+    // --- Tìm trên mạng (1 lượt/ngày/người, qua localStorage) -------------
+
+    function todayKeyVN() {
+      const now = new Date();
+      // Quy đổi về giờ Việt Nam (UTC+7) bất kể múi giờ máy người dùng.
+      const vn = new Date(now.getTime() + (7 * 60 - now.getTimezoneOffset()) * 60000);
+      return vn.toISOString().slice(0, 10);
+    }
+
+    function getWebSearchUsage() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(WEBSEARCH_KEY) || "{}");
+        if (raw && raw.date === todayKeyVN()) return raw.count || 0;
+      } catch {
+        // bỏ qua, coi như chưa dùng lượt nào
+      }
+      return 0;
+    }
+
+    function setWebSearchUsage(count) {
+      try {
+        localStorage.setItem(
+          WEBSEARCH_KEY,
+          JSON.stringify({ date: todayKeyVN(), count })
+        );
+      } catch (error) {
+        console.warn("Không lưu được lượt tìm trên mạng:", error);
+      }
+    }
+
+    function refreshWebSearchButton() {
+      const used = getWebSearchUsage() >= 1;
+
+      webSearchBtn.disabled = used || busy;
+      webSearchBtn.setAttribute("aria-pressed", String(webSearchArmed));
+      webSearchBtn.classList.toggle("active", webSearchArmed && !used);
+
+      if (used) {
+        webSearchBtn.textContent = "🌐 Hết lượt hôm nay";
+      } else if (webSearchArmed) {
+        webSearchBtn.textContent = "🌐 Đang bật (tin kế tiếp)";
+      } else {
+        webSearchBtn.textContent = "🌐 Tìm trên mạng";
+      }
+    }
+
+    webSearchBtn.addEventListener("click", () => {
+      if (getWebSearchUsage() >= 1 || busy) return;
+      webSearchArmed = !webSearchArmed;
+      refreshWebSearchButton();
+    });
+
+    function addSourcesToggle(bubble, sources) {
+      const actions = bubble.querySelector(".actions");
+      if (!actions || !sources.length) return;
+
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "copy sources-toggle";
+      toggle.textContent = "🔗 Nguồn (" + sources.length + ")";
+
+      const panel = document.createElement("div");
+      panel.className = "sources-panel";
+      panel.hidden = true;
+
+      const note = document.createElement("div");
+      note.className = "sources-note";
+      note.textContent = "Tìm kiếm bởi Google";
+      panel.appendChild(note);
+
+      const list = document.createElement("ul");
+
+      for (const source of sources) {
+        const li = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = source.uri;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = source.title;
+        li.appendChild(link);
+        list.appendChild(li);
+      }
+
+      panel.appendChild(list);
+
+      toggle.addEventListener("click", () => {
+        panel.hidden = !panel.hidden;
+        toggle.textContent =
+          (panel.hidden ? "🔗 Nguồn (" : "🔽 Ẩn nguồn (") + sources.length + ")";
+      });
+
+      actions.appendChild(toggle);
+      bubble.appendChild(panel);
+    }
+
+    // --- Lỗi & thử lại -----------------------------------------------------
 
     function getStatus(error) {
       const direct =
@@ -616,8 +1064,8 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
       );
     }
 
-    // Bong bóng lỗi, kèm nút "Thử lại" gửi lại đúng câu vừa hỏi.
-    function addErrorMessage(info, prompt) {
+    // Bong bóng lỗi, kèm nút "Thử lại" gửi lại đúng câu + tệp + chế độ tìm kiếm vừa dùng.
+    function addErrorMessage(info, prompt, retryOptions = {}) {
       const { bubble } = addMessage(info.text, "bot", { save: false });
       bubble.classList.add("error");
 
@@ -655,7 +1103,7 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
       retry.addEventListener("click", () => {
         if (busy || retry.disabled) return;
         bubble.remove();
-        sendPrompt(prompt, { showUser: false });
+        sendPrompt(prompt, { showUser: false, ...retryOptions });
       });
 
       actions.prepend(retry);
@@ -683,9 +1131,12 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
       modelSelect.disabled = value;
       $("clear").disabled = value;
       promptInput.disabled = value;
+      attachBtn.disabled = value;
+      refreshWebSearchButton();
     }
 
     renderHistory();
+    refreshWebSearchButton();
 
     try {
       initializeAI();
@@ -726,6 +1177,9 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
       saveHistory();
       renderHistory();
 
+      attachments = [];
+      renderAttachments();
+
       try {
         createSession();
         statusElement.textContent = "● Đã xóa lịch sử";
@@ -735,8 +1189,38 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
       }
     });
 
-    async function sendPrompt(prompt, { showUser = true } = {}) {
-      if (!prompt || busy) return;
+    // --- Ô nhập: Enter gửi, Shift+Enter xuống dòng, tự cao theo nội dung --
+
+    function resetPromptHeight() {
+      promptInput.style.height = "auto";
+    }
+
+    promptInput.addEventListener("input", () => {
+      promptInput.style.height = "auto";
+      promptInput.style.height = promptInput.scrollHeight + "px";
+    });
+
+    promptInput.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        if (typeof form.requestSubmit === "function") {
+          form.requestSubmit();
+        } else {
+          form.dispatchEvent(new Event("submit", { cancelable: true }));
+        }
+      }
+    });
+
+    // --- Gửi tin nhắn -------------------------------------------------------
+
+    async function sendPrompt(prompt, options = {}) {
+      const {
+        showUser = true,
+        attachments: msgAttachments = [],
+        webSearch = false
+      } = options;
+
+      if ((!prompt && !msgAttachments.length) || busy) return;
 
       if (!chatSession) {
         addMessage(
@@ -753,7 +1237,14 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
       setBusy(true);
       statusElement.textContent = "● Đang kết nối Gemini...";
 
-      if (showUser) addMessage(prompt, "user", { save: false });
+      let displayText = prompt;
+      if (msgAttachments.length) {
+        displayText +=
+          (displayText ? "\n" : "") +
+          "📎 " + msgAttachments.map(a => a.name).join(", ");
+      }
+
+      if (showUser) addMessage(displayText, "user", { save: false });
 
       const responseMessage = addMessage(
         "Đang kết nối...",
@@ -763,11 +1254,41 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
 
       let answer = "";
       let iterator = null;
+      let usedWebSearch = false;
+      let sources = [];
+
+      // Phiên dùng cho tin nhắn này: bình thường là chatSession, nhưng khi
+      // bật tìm trên mạng thì tạo một phiên tạm có bật Google Search, dùng
+      // đúng 1 lần rồi bỏ, không ảnh hưởng tới chatSession chính.
+      let activeSession = chatSession;
+
+      if (webSearch) {
+        try {
+          const groundedModel = getGenerativeModel(ai, {
+            model: modelSelect.value,
+            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+            tools: [{ googleSearch: {} }]
+          }, { timeout: REQUEST_TIMEOUT_MS });
+
+          activeSession = groundedModel.startChat({ history: makeModelHistory() });
+          usedWebSearch = true;
+        } catch (error) {
+          console.error("Không bật được tìm kiếm trên mạng:", error);
+          activeSession = chatSession;
+          usedWebSearch = false;
+          responseMessage.content.textContent =
+            "🌐 Chưa bật được tìm kiếm trên mạng cho gói hiện tại, " +
+            "KBAI sẽ trả lời bình thường...";
+        }
+      }
 
       try {
+        const messageParts = buildMessageParts(prompt, msgAttachments);
+
         // Hiển thị nội dung ngay khi từng phần được Gemini gửi về.
         const result = await withTimeout(
-          chatSession.sendMessageStream(prompt),
+          activeSession.sendMessageStream(messageParts),
           REQUEST_TIMEOUT_MS
         );
 
@@ -793,6 +1314,25 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
 
         responseMessage.content.classList.remove("streaming");
 
+        if (usedWebSearch) {
+          try {
+            const finalResponse = await result.response;
+            const chunks =
+              finalResponse?.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+            const seen = new Set();
+
+            for (const chunk of chunks) {
+              const uri = chunk?.web?.uri;
+              if (uri && !seen.has(uri)) {
+                seen.add(uri);
+                sources.push({ title: chunk.web.title || uri, uri });
+              }
+            }
+          } catch (metaError) {
+            console.warn("Không đọc được danh sách nguồn:", metaError);
+          }
+        }
+
         if (!answer.trim()) {
           responseMessage.bubble.remove();
 
@@ -802,21 +1342,28 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
               retryable: true,
               cooldown: 0
             },
-            prompt
+            prompt,
+            { attachments: msgAttachments, webSearch }
           );
 
           statusElement.textContent = "● Không có nội dung";
         } else {
           responseMessage.content.textContent = answer.trim();
 
-          // Chỉ lưu hội thoại khi AI trả lời thành công.
+          // Chỉ lưu hội thoại khi AI trả lời thành công. Tệp đính kèm KHÔNG
+          // được lưu, chỉ giữ lại tên tệp trong lịch sử hiển thị.
           history.push(
-            { role: "user", text: prompt },
+            { role: "user", text: displayText },
             { role: "bot", text: answer.trim() }
           );
 
           history = history.slice(-100);
           saveHistory();
+
+          if (usedWebSearch) {
+            setWebSearchUsage(getWebSearchUsage() + 1);
+            if (sources.length) addSourcesToggle(responseMessage.bubble, sources);
+          }
 
           statusElement.textContent = "● Gemini đã trả lời";
         }
@@ -826,11 +1373,14 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
         try { iterator?.return?.(); } catch {}
 
         responseMessage.bubble.remove();
-        addErrorMessage(classifyError(error), prompt);
+        addErrorMessage(classifyError(error), prompt, {
+          attachments: msgAttachments,
+          webSearch
+        });
 
         statusElement.textContent = "● Gemini gặp lỗi";
 
-        // Khôi phục phiên chat từ những lượt đã lưu thành công.
+        // Khôi phục phiên chat chính từ những lượt đã lưu thành công.
         try {
           createSession();
         } catch (sessionError) {
@@ -839,6 +1389,7 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
         }
       } finally {
         setBusy(false);
+        refreshWebSearchButton();
         promptInput.focus();
         scrollToBottom();
       }
@@ -848,8 +1399,9 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
       event.preventDefault();
 
       const prompt = promptInput.value.trim();
+      const currentAttachments = attachments;
 
-      if (!prompt || busy) return;
+      if ((!prompt && !currentAttachments.length) || busy) return;
 
       if (!chatSession) {
         addMessage(
@@ -860,8 +1412,18 @@ Bạn là KangBao AI, trợ lý AI của KangBao.
         return;
       }
 
+      const useWebSearch = webSearchArmed && getWebSearchUsage() < 1;
+
       promptInput.value = "";
-      sendPrompt(prompt);
+      resetPromptHeight();
+
+      attachments = [];
+      renderAttachments();
+
+      webSearchArmed = false;
+      refreshWebSearchButton();
+
+      sendPrompt(prompt, { attachments: currentAttachments, webSearch: useWebSearch });
     });
   </script>
 </body>
